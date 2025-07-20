@@ -193,22 +193,35 @@ def get_playlist_tracks(sp: spotipy.Spotify, playlist_id: str, logger) -> list:
     tracks_data = sp.playlist_items(playlist_id)
 
     while tracks_data:
-        for item in tracks_data['items']:
-            track = item['track']
-            if track:
-                tracks.append({
-                    'position': track_index,
-                    'name': track['name'],
-                    'artist': ', '.join([artist['name'] for artist in track['artists']]),
-                    'album': track['album']['name'],
-                    'album_release_date': track['album']['release_date'],
-                    'spotify_url': track['external_urls']['spotify'],
-                    'added_at': item['added_at'],
-                    'added_by': item['added_by']['id'] if item['added_by'] else None,
-                })
-                track_index += 1
+        for item in tracks_data["items"]:
+            track = item.get("track")
+            if not track:
+                continue
 
-        tracks_data = sp.next(tracks_data) if tracks_data['next'] else None
+            # Safely get the Spotify URL (or None if it's a local track)
+            external = track.get("external_urls", {})
+            spotify_url = external.get("spotify")
+
+            tracks.append(
+                {
+                    "position": track_index,
+                    "name": track["name"],
+                    "artist": ", ".join(
+                        artist["name"] for artist in track.get("artists", [])
+                    ),
+                    "album": track["album"]["name"],
+                    "album_release_date": track["album"]["release_date"],
+                    "spotify_url": spotify_url,
+                    "spotify_uri": track.get("uri"),
+                    "added_at": item.get("added_at"),
+                    "added_by": (
+                        item["added_by"]["id"] if item.get("added_by") else None
+                    ),
+                }
+            )
+            track_index += 1
+
+        tracks_data = sp.next(tracks_data) if tracks_data.get("next") else None
 
     logger.debug(f"Retrieved {len(tracks)} tracks for playlist ID {playlist_id}.")
     return tracks
