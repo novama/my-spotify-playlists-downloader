@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # my_spotify_playlists_downloader.py
 #
-# Exports your Spotify playlists to JSON files.
+# Exports your Spotify playlists and Liked Songs to JSON files.
 #
 # License: MIT
 # Date: 2025-07-01
@@ -23,11 +23,13 @@
 my_spotify_playlists_downloader.py
 
 Usage:
-    python my_spotify_playlists_downloader.py [--split] [--output_dir /path/to/dir]
+    python my_spotify_playlists_downloader.py [--split] [--output_dir /path/to/dir] [--playlist_name NAME]
 
 Options:
     --split           Export each playlist as an individual JSON file named after the playlist (sanitized).
     --output_dir DIR  Override the output directory path defined in .env or default.
+    --playlist_name NAME  Export only the playlist or Liked Songs with this name (case-insensitive, normalized).
+    --clean_output    Delete all JSON files in the output directory before exporting.
 """
 
 import argparse
@@ -143,8 +145,6 @@ def sanitize_playlist_name(name: str) -> str:
     Returns:
         str: Sanitized playlist name.
     """
-
-    # Remove emoji and non-printable characters
     def is_valid_char(c):
         cat = unicodedata.category(c)
         # Exclude emoji (So, Sk, Cs, Co, Cn), but keep accents and printable letters/numbers
@@ -214,11 +214,48 @@ def get_playlist_tracks(sp: spotipy.Spotify, playlist_id: str, logger) -> list:
     return tracks
 
 
+def get_liked_songs(sp: spotipy.Spotify, logger) -> list:
+    """
+    Retrieve all liked songs from the current user's Spotify account.
+
+    Args:
+        sp (spotipy.Spotify): Authenticated Spotify client.
+        logger (Logger): Logger instance for logging.
+
+    Returns:
+        list: List of track dictionaries with selected metadata.
+    """
+    tracks = []
+    track_index = 0
+    results = sp.current_user_saved_tracks()
+
+    while results:
+        for item in results['items']:
+            track = item['track']
+            if track:
+                tracks.append({
+                    'position': track_index,
+                    'name': track['name'],
+                    'artist': ', '.join([artist['name'] for artist in track['artists']]),
+                    'album': track['album']['name'],
+                    'album_release_date': track['album']['release_date'],
+                    'spotify_url': track['external_urls']['spotify'],
+                    'added_at': item['added_at'],
+                    'added_by': None,  # Liked Songs doesn't provide added_by info
+                })
+                track_index += 1
+
+        results = sp.next(results) if results['next'] else None
+
+    logger.debug(f"Retrieved {len(tracks)} liked songs.")
+    return tracks
+
+
 def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
                      output_prefix_split: str, output_prefix_single: str, playlist_name_filter: str, logger):
     """
-    Export all playlists to JSON files, either as individual files or a single combined file.
-    Optionally filter by normalized playlist name.
+    Export all playlists and/or Liked Songs to JSON files, either as individual files or a single combined file.
+    Optionally filter by normalized playlist name or 'Liked Songs'.
 
     Args:
         sp (spotipy.Spotify): Authenticated Spotify client.
@@ -226,15 +263,15 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
         output_dir (Path): Directory to save output files.
         output_prefix_split (str): Prefix for split output filenames.
         output_prefix_single (str): Prefix for single output filename.
-        playlist_name_filter (str): Normalized playlist name to filter.
+        playlist_name_filter (str): Normalized playlist name or 'Liked Songs' to filter.
         logger (Logger): Logger instance for logging.
 
     Returns:
         tuple: (total_playlists_exported (int), total_tracks_exported (int))
     """
-    playlists = get_all_playlists(sp, logger)
     export = []
     total_tracks = 0
+    total_playlists = 0
 
     output_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Output directory set to: {output_dir}")
@@ -243,6 +280,35 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
     normalized_filter = normalize_playlist_name(playlist_name_filter) if playlist_name_filter else None
     if normalized_filter:
         logger.info(f"Running with playlist_name filter: '{playlist_name_filter}' (normalized: '{normalized_filter}')")
+
+    # Handle Liked Songs if filter matches or no filter is provided
+    liked_songs_exported = False
+    if not normalized_filter or normalized_filter == normalize_playlist_name("Liked Songs"):
+        logger.info("Exporting Liked Songs")
+        tracks = get_liked_songs(sp, logger)
+        total_tracks += len(tracks)
+        liked_songs_obj = {
+            'playlist_name': 'Liked Songs',
+            'playlist_id': 'liked_songs',
+            'owner_id': sp.current_user()['id'],
+            'owner': sp.current_user()['display_name'] or 'Unknown',
+            'description': 'User\'s Liked Songs collection',
+            'snapshot_id': '',
+            'tracks': tracks
+        }
+
+        if split:
+            export_filename = f"{output_prefix_split}{sanitize_playlist_name('Liked Songs')}.json"
+            filepath = output_dir / export_filename
+            filepath.write_text(json.dumps([liked_songs_obj], ensure_ascii=False, indent=4), encoding='utf-8')
+            logger.info(f"Saved Liked Songs to {filepath}")
+        else:
+            export.append(liked_songs_obj)
+        total_playlists += 1
+        liked_songs_exported = True
+
+    # Handle playlists
+    playlists = get_all_playlists(sp, logger)
     filtered_playlists = []
     for playlist in playlists:
         normalized_name = normalize_playlist_name(playlist['name'])
@@ -252,10 +318,8 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
         else:
             filtered_playlists.append(playlist)
 
-    logger.info(f"Number of playlists to export: {len(filtered_playlists)}")
-
-    if normalized_filter and not filtered_playlists:
-        logger.error(f"No playlist matched the name: '{playlist_name_filter}' (normalized: '{normalized_filter}')")
+    if normalized_filter and not filtered_playlists and not liked_songs_exported:
+        logger.error(f"No playlist or Liked Songs matched the name: '{playlist_name_filter}' (normalized: '{normalized_filter}')")
         return 0, 0
 
     for playlist in filtered_playlists:
@@ -279,24 +343,23 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
 
         if split:
             export_filename = f"{output_prefix_split}{sanitize_playlist_name(playlist_name)}.json"
-            filename = export_filename
-            filepath = output_dir / filename
+            filepath = output_dir / export_filename
             filepath.write_text(json.dumps([playlist_obj], ensure_ascii=False, indent=4), encoding='utf-8')
             logger.info(f"Saved playlist to {filepath}")
         else:
             export.append(playlist_obj)
+        total_playlists += 1
 
-    if not split and filtered_playlists:
+    if not split and (filtered_playlists or liked_songs_exported):
         if normalized_filter:
             export_filename = f"{output_prefix_single}filtered_spotify_playlists.json"
         else:
             export_filename = f"{output_prefix_single}spotify_playlists.json"
-        filename = export_filename
-        filepath = output_dir / filename
+        filepath = output_dir / export_filename
         filepath.write_text(json.dumps(export, ensure_ascii=False, indent=4), encoding='utf-8')
         logger.info(f"Export completed. File saved as {filepath}")
 
-    return len(filtered_playlists), total_tracks
+    return total_playlists, total_tracks
 
 
 def main():
@@ -308,13 +371,13 @@ def main():
 
     config = load_env()
 
-    parser = argparse.ArgumentParser(description="Download Spotify playlists to JSON")
+    parser = argparse.ArgumentParser(description="Download Spotify playlists and Liked Songs to JSON")
     parser.add_argument('--split', action='store_true',
                         help='Export each playlist as an individual JSON file')
     parser.add_argument('--output_dir', type=str, default=None,
                         help='Override the output directory path defined in .env or default.')
     parser.add_argument('--playlist_name', type=str, default=None,
-                        help='Export only the playlist with this name (case-insensitive, normalized).')
+                        help='Export only the playlist or Liked Songs with this name (case-insensitive, normalized).')
     parser.add_argument('--clean_output', action='store_true',
                         help='Delete all JSON files in the output directory before exporting playlists.')
     args = parser.parse_args()
@@ -335,7 +398,7 @@ def main():
         client_id=config["SPOTIFY_CLIENT_ID"],
         client_secret=config["SPOTIFY_CLIENT_SECRET"],
         redirect_uri=config["SPOTIFY_REDIRECT_URI"],
-        scope="playlist-read-private"
+        scope="playlist-read-private user-library-read"  # Added user-library-read scope
     ))
 
     # Clean output directory if requested
@@ -352,7 +415,7 @@ def main():
     # Pass playlist_name filter if provided and not blank
     playlist_name_filter = args.playlist_name if args.playlist_name and args.playlist_name.strip() else None
 
-    # Export playlists
+    # Export playlists and/or Liked Songs
     total_playlists, total_tracks = export_playlists(
         sp, args.split, output_dir, output_prefix_split, output_prefix_single, playlist_name_filter, logger)
 
