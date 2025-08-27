@@ -202,7 +202,7 @@ def get_playlist_tracks(sp: spotipy.Spotify, playlist_id: str, logger) -> list:
                     'artist': ', '.join([artist['name'] for artist in track['artists']]),
                     'album': track['album']['name'],
                     'album_release_date': track['album']['release_date'],
-                    'spotify_url': track['external_urls']['spotify'],
+                    'spotify_url': track.get('external_urls', {}).get('spotify', None),
                     'added_at': item['added_at'],
                     'added_by': item['added_by']['id'] if item['added_by'] else None,
                 })
