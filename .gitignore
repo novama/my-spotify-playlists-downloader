@@ -208,7 +208,7 @@ __marimo__/
 
 # Custom ignores
 .idea/
-output/
+output*/
 input/
 playlists/
 logs/
