@@ -70,7 +70,7 @@ pip install -r requirements.txt
     - `SPOTIFY_CLIENT_ID`
     - `SPOTIFY_CLIENT_SECRET`
     - `SPOTIFY_REDIRECT_URI` (deve corrispondere esattamente a quanto configurato nella tua app Spotify,
-      es. <http://127.0.0.1:8888/callback>)
+      es. <http://127.0.0.1:8000/callback>)
 
    Variabili opzionali:
 

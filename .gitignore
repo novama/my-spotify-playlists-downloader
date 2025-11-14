@@ -216,3 +216,5 @@ headers_auth.json
 headers_raw.json
 headers.json
 browser.json
+*.rar
+*.zip

@@ -56,7 +56,7 @@ Copiez ces deux valeurs et ajoutez-les à votre fichier `.env`.
 ### 5. Configurez votre Redirect URI
 
 1. Dans le tableau de bord de votre application, cliquez sur **“Edit Settings”**.
-2. Sous **Redirect URIs**, ajoutez : <http://127.0.0.1:8888/callback> *(ou l'URI exact configuré dans votre `.env`)*.
+2. Sous **Redirect URIs**, ajoutez : <http://127.0.0.1:8000/callback> *(ou l'URI exact configuré dans votre `.env`)*.
 3. Cliquez sur **Save**.
 
 ![Configuration des Redirect URIs](../images/redirect-uris-capture.png)
