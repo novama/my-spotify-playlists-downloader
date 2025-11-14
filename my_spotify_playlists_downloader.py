@@ -23,11 +23,23 @@
 my_spotify_playlists_downloader.py
 
 Usage:
-    python my_spotify_playlists_downloader.py [--split] [--output_dir /path/to/dir]
+    python my_spotify_playlists_downloader.py [--split] [--output_dir /path/to/dir] [--playlist_name "Playlist Name"] [--liked_songs] [--all_playlists] [--clean_output]
 
 Options:
-    --split           Export each playlist as an individual JSON file named after the playlist (sanitized).
-    --output_dir DIR  Override the output directory path defined in .env or default.
+    --split                    Export each playlist as an individual JSON file named after the playlist (sanitized).
+    --output_dir DIR           Override the output directory path defined in .env or default.
+    --playlist_name NAME       Export only the playlist with this name (case-insensitive, normalized).
+    --liked_songs              Export liked songs (saved tracks). Can be combined with --playlist_name or --all_playlists.
+    --all_playlists            Export all playlists. Can be combined with --liked_songs.
+    --clean_output             Delete all JSON files in the output directory before exporting playlists.
+
+Examples:
+    python my_spotify_playlists_downloader.py                                    # Export all playlists
+    python my_spotify_playlists_downloader.py --liked_songs                      # Export only liked songs
+    python my_spotify_playlists_downloader.py --playlist_name "My Playlist"      # Export only "My Playlist"
+    python my_spotify_playlists_downloader.py --liked_songs --playlist_name "My Playlist"  # Export liked songs + "My Playlist"
+    python my_spotify_playlists_downloader.py --liked_songs --all_playlists      # Export liked songs + all playlists
+    python my_spotify_playlists_downloader.py --all_playlists                    # Export all playlists (same as no flags)
 """
 
 import argparse
@@ -176,6 +188,77 @@ def get_all_playlists(sp: spotipy.Spotify, logger) -> list:
     return playlists
 
 
+def _process_tracks_data(sp: spotipy.Spotify, tracks_data, logger, source_description: str) -> list:
+    """
+    Generic function to process tracks data from any Spotify source.
+    
+    Args:
+        sp (spotipy.Spotify): Authenticated Spotify client for pagination
+        tracks_data: Initial tracks data from Spotify API (playlist_items or current_user_saved_tracks)
+        logger: Logger instance for logging
+        source_description (str): Description of the source for logging (e.g., "playlist ID xyz", "liked songs")
+    
+    Returns:
+        list: List of track dictionaries with selected metadata
+    """
+    tracks = []
+    track_index = 0
+
+    while tracks_data:
+        items = tracks_data.get('items', [])
+        for item in items:
+            track = item.get('track')
+            if not track:
+                logger.debug(f"Skipping item at position {track_index}: no track data")
+                continue
+                
+            try:
+                # Safely extract track data with fallbacks
+                track_name = track.get('name', 'Unknown Track')
+                artists = track.get('artists', [])
+                artist_names = ', '.join([artist.get('name', 'Unknown Artist') for artist in artists if artist.get('name')])
+                if not artist_names:
+                    artist_names = 'Unknown Artist'
+                
+                album = track.get('album', {})
+                album_name = album.get('name', 'Unknown Album')
+                album_release_date = album.get('release_date', '')
+                
+                external_urls = track.get('external_urls', {})
+                spotify_url = external_urls.get('spotify', '')
+                spotify_uri = track.get("uri", '')
+                
+                added_at = item.get('added_at', '')
+                added_by = item.get('added_by', {})
+                added_by_id = added_by.get('id') if added_by else None
+
+                tracks.append({
+                    'position': track_index,
+                    'name': track_name,
+                    'artist': artist_names,
+                    'album': album_name,
+                    'album_release_date': album_release_date,
+                    'spotify_url': spotify_url,
+                    'spotify_uri': spotify_uri,
+                    'added_at': added_at,
+                    'added_by': added_by_id,
+                })
+                track_index += 1
+                
+            except Exception as e:
+                logger.warning(f"Error processing track at position {track_index} from {source_description}: {e}")
+                continue
+
+        # Get next page of results
+        try:
+            tracks_data = sp.next(tracks_data) if tracks_data and tracks_data.get('next') else None
+        except:
+            tracks_data = None
+
+    logger.debug(f"Retrieved {len(tracks)} tracks from {source_description}.")
+    return tracks
+
+
 def get_playlist_tracks(sp: spotipy.Spotify, playlist_id: str, logger) -> list:
     """
     Retrieve all tracks from a specific playlist by ID.
@@ -188,30 +271,91 @@ def get_playlist_tracks(sp: spotipy.Spotify, playlist_id: str, logger) -> list:
     Returns:
         list: List of track dictionaries with selected metadata.
     """
-    tracks = []
-    track_index = 0
-    tracks_data = sp.playlist_items(playlist_id)
+    try:
+        tracks_data = sp.playlist_items(playlist_id)
+    except Exception as e:
+        logger.error(f"Failed to retrieve playlist items for playlist ID {playlist_id}: {e}")
+        return []
+    
+    return _process_tracks_data(sp, tracks_data, logger, f"playlist ID {playlist_id}")
 
-    while tracks_data:
-        for item in tracks_data['items']:
-            track = item['track']
-            if track:
-                tracks.append({
-                    'position': track_index,
-                    'name': track['name'],
-                    'artist': ', '.join([artist['name'] for artist in track['artists']]),
-                    'album': track['album']['name'],
-                    'album_release_date': track['album']['release_date'],
-                    'spotify_url': track['external_urls']['spotify'],
-                    'added_at': item['added_at'],
-                    'added_by': item['added_by']['id'] if item['added_by'] else None,
-                })
-                track_index += 1
 
-        tracks_data = sp.next(tracks_data) if tracks_data['next'] else None
+def get_user_saved_tracks(sp: spotipy.Spotify, logger) -> list:
+    """
+    Retrieve all liked songs (saved tracks) from the current user.
 
-    logger.debug(f"Retrieved {len(tracks)} tracks for playlist ID {playlist_id}.")
-    return tracks
+    Args:
+        sp (spotipy.Spotify): Authenticated Spotify client.
+        logger (Logger): Logger instance for logging.
+
+    Returns:
+        list: List of track dictionaries with selected metadata.
+    """
+    try:
+        tracks_data = sp.current_user_saved_tracks()
+    except Exception as e:
+        logger.error(f"Failed to retrieve user saved tracks: {e}")
+        return []
+    
+    return _process_tracks_data(sp, tracks_data, logger, "liked songs")
+
+
+def export_liked_songs(sp: spotipy.Spotify, split: bool, output_dir: Path,
+                      output_prefix_split: str, output_prefix_single: str, logger):
+    """
+    Export liked songs (saved tracks) to JSON file.
+    
+    Args:
+        sp (spotipy.Spotify): Authenticated Spotify client.
+        split (bool): Whether to export as individual file (for consistency).
+        output_dir (Path): Directory to save output files.
+        output_prefix_split (str): Prefix for split output filenames.
+        output_prefix_single (str): Prefix for single output filename.
+        logger (Logger): Logger instance for logging.
+    
+    Returns:
+        tuple: (1, total_tracks_exported)
+    """
+    logger.info("Exporting liked songs (saved tracks)")
+    
+    tracks = get_user_saved_tracks(sp, logger)
+    
+    if not tracks:
+        logger.warning("No liked songs found to export")
+        return 0, 0
+    
+    # Get current user info
+    try:
+        user_info = sp.current_user()
+        user_id = user_info.get('id', 'unknown')
+        user_name = user_info.get('display_name') or user_id
+    except Exception as e:
+        logger.warning(f"Could not retrieve user info: {e}")
+        user_id = 'unknown'
+        user_name = 'Unknown User'
+    
+    liked_songs_obj = {
+        'playlist_name': 'Liked Songs',
+        'playlist_id': 'liked_songs',  # Special identifier
+        'owner_id': user_id,
+        'owner': user_name,
+        'description': 'Your liked songs from Spotify',
+        'snapshot_id': '',
+        'tracks': tracks
+    }
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    if split:
+        filename = f"{output_prefix_split}Liked_Songs.json"
+    else:
+        filename = f"{output_prefix_single}liked_songs.json"
+    
+    filepath = output_dir / filename
+    filepath.write_text(json.dumps([liked_songs_obj], ensure_ascii=False, indent=4), encoding='utf-8')
+    logger.info(f"Liked songs exported to: {filepath}")
+    
+    return 1, len(tracks)
 
 
 def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
@@ -234,6 +378,7 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
     """
     playlists = get_all_playlists(sp, logger)
     export = []
+    total_playlists = 0
     total_tracks = 0
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -283,8 +428,10 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
             filepath = output_dir / filename
             filepath.write_text(json.dumps([playlist_obj], ensure_ascii=False, indent=4), encoding='utf-8')
             logger.info(f"Saved playlist to {filepath}")
+            total_playlists += 1
         else:
             export.append(playlist_obj)
+            total_playlists += 1
 
     if not split and filtered_playlists:
         if normalized_filter:
@@ -296,7 +443,7 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
         filepath.write_text(json.dumps(export, ensure_ascii=False, indent=4), encoding='utf-8')
         logger.info(f"Export completed. File saved as {filepath}")
 
-    return len(filtered_playlists), total_tracks
+    return total_playlists, total_tracks
 
 
 def main():
@@ -315,9 +462,17 @@ def main():
                         help='Override the output directory path defined in .env or default.')
     parser.add_argument('--playlist_name', type=str, default=None,
                         help='Export only the playlist with this name (case-insensitive, normalized).')
+    parser.add_argument('--liked_songs', action='store_true',
+                        help='Export liked songs (saved tracks). Can be combined with other options.')
+    parser.add_argument('--all_playlists', action='store_true',
+                        help='Export all playlists. Can be combined with --liked_songs.')
     parser.add_argument('--clean_output', action='store_true',
                         help='Delete all JSON files in the output directory before exporting playlists.')
     args = parser.parse_args()
+
+    # Validate argument combinations
+    if args.playlist_name and args.all_playlists:
+        parser.error("--playlist_name and --all_playlists cannot be used together. Use --playlist_name for a specific playlist, or --all_playlists for all playlists.")
 
     # Determine log directory and logging
     log_dir = Path(config["LOG_DIR"]).expanduser().resolve() if config["LOG_DIR"] else Path(__file__).parent
@@ -335,7 +490,7 @@ def main():
         client_id=config["SPOTIFY_CLIENT_ID"],
         client_secret=config["SPOTIFY_CLIENT_SECRET"],
         redirect_uri=config["SPOTIFY_REDIRECT_URI"],
-        scope="playlist-read-private"
+        scope="playlist-read-private user-library-read"
     ))
 
     # Clean output directory if requested
@@ -352,13 +507,47 @@ def main():
     # Pass playlist_name filter if provided and not blank
     playlist_name_filter = args.playlist_name if args.playlist_name and args.playlist_name.strip() else None
 
-    # Export playlists
-    total_playlists, total_tracks = export_playlists(
-        sp, args.split, output_dir, output_prefix_split, output_prefix_single, playlist_name_filter, logger)
+    # Handle liked songs and/or playlists export
+    total_playlists = 0
+    total_tracks = 0
+    
+    # Export liked songs if requested
+    if args.liked_songs:
+        logger.info("Exporting liked songs...")
+        liked_playlists, liked_tracks = export_liked_songs(
+            sp, args.split, output_dir, output_prefix_split, output_prefix_single, logger)
+        total_playlists += liked_playlists
+        total_tracks += liked_tracks
+    
+    # Export playlists based on filter, all_playlists flag, or default behavior
+    # Skip playlist export only if --liked_songs is used alone (without --playlist_name or --all_playlists)
+    should_export_playlists = not args.liked_songs or playlist_name_filter is not None or args.all_playlists
+    
+    if should_export_playlists:
+        if playlist_name_filter:
+            logger.info(f"Exporting playlist matching: '{playlist_name_filter}'")
+        else:
+            logger.info("Exporting all playlists...")
+        
+        playlist_count, playlist_tracks = export_playlists(
+            sp, args.split, output_dir, output_prefix_split, output_prefix_single, playlist_name_filter, logger)
+        total_playlists += playlist_count
+        total_tracks += playlist_tracks
 
     elapsed_time = time.time() - start_time
     logger.info(f"Script execution completed in: {elapsed_time:.2f} seconds.")
-    logger.info(f"Total playlists exported: {total_playlists}")
+    
+    # Log results based on what was exported
+    if args.liked_songs and (playlist_name_filter or args.all_playlists):
+        if args.all_playlists:
+            logger.info(f"Total exports: {total_playlists} (including liked songs + all playlists)")
+        else:
+            logger.info(f"Total exports: {total_playlists} (including liked songs + filtered playlists)")
+    elif args.liked_songs and not playlist_name_filter and not args.all_playlists:
+        logger.info(f"Liked songs exported: {total_playlists}")  # Will be 1 if successful, 0 if failed
+    else:
+        logger.info(f"Total playlists exported: {total_playlists}")
+    
     logger.info(f"Total tracks exported: {total_tracks}")
 
 
