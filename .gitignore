@@ -208,7 +208,7 @@ __marimo__/
 
 # Custom ignores
 .idea/
-output/
+output*/
 input/
 playlists/
 logs/
@@ -216,3 +216,5 @@ headers_auth.json
 headers_raw.json
 headers.json
 browser.json
+*.rar
+*.zip

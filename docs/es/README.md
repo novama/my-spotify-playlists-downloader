@@ -26,7 +26,10 @@ El proyecto se publica bajo la licencia MIT y está destinado para uso educativo
 
 - Exporta **todas las listas de reproducción y metadatos de pistas**, incluyendo nombre, artistas, álbum, fecha de
   lanzamiento y más.
+- **Exporta canciones favoritas** (colección de pistas guardadas).
 - Opción para **dividir la exportación** en archivos JSON individuales por lista.
+- **Combinaciones flexibles de exportación** (canciones favoritas y/o listas de reproducción).
+- **Generación de reporte HTML** con diseño moderno y responsivo.
 - Incluye la **posición de la pista en la lista**, usuario que la agregó y fecha de adición.
 - **Registro de logs** tanto en consola como en archivo para trazabilidad.
 - **Portable**: funciona en Windows, macOS y Linux.
@@ -72,7 +75,7 @@ pip install -r requirements.txt
     - `SPOTIFY_CLIENT_ID`
     - `SPOTIFY_CLIENT_SECRET`
     - `SPOTIFY_REDIRECT_URI` (debe coincidir exactamente con la configuración de tu app en Spotify, por
-      ejemplo <http://127.0.0.1:8888/callback>)
+      ejemplo <http://127.0.0.1:8000/callback>)
 
    Variables opcionales:
 
@@ -119,22 +122,67 @@ python my_spotify_playlists_downloader.py --playlist_name "Nombre de mi playlist
   el valor proporcionado.
 - Si no hay coincidencias, se registrará un error y no se exportará ningún archivo.
 
+### Exportar solo canciones favoritas (sin listas de reproducción)
+
+```shell
+python my_spotify_playlists_downloader.py --liked_songs
+```
+
+- Exporta tu colección de pistas guardadas (canciones favoritas) a un archivo JSON dedicado.
+- Por defecto, el script exporta listas de reproducción. Usa esta bandera para exportar solo canciones favoritas.
+
+### Exportar listas de reproducción y canciones favoritas
+
+```shell
+python my_spotify_playlists_downloader.py --all_playlists
+```
+
+- Exporta tanto tus listas de reproducción como tus canciones favoritas.
+- Equivalente a usar `--liked_songs` sin especificar `--playlist_name`.
+
+### Generar reporte HTML
+
+```shell
+python my_spotify_playlists_downloader.py --html_report
+```
+
+- Genera un reporte HTML profesional y responsivo con resumen de toda la exportación.
+- Incluye estadísticas, recuentos de listas/pistas, y rutas de archivos exportados.
+- El reporte se guarda en el directorio de salida como `SpotifyExportReport_YYYYMMDD_HHMMSS.html`.
+
 ### Limpiar el directorio de salida antes de exportar
 
 ```shell
 python my_spotify_playlists_downloader.py --clean_output
 ```
 
-- Todos los archivos JSON en el directorio de salida serán eliminados antes de exportar nuevas listas.
+- Todos los archivos JSON y HTML en el directorio de salida serán eliminados antes de exportar.
 - Útil para evitar mezclar exportaciones antiguas y nuevas.
 
-### Combinar opciones
+### Ejemplos combinados
 
-Puedes combinar estas opciones según lo necesites. Por ejemplo, para limpiar el directorio de salida y exportar solo una
-lista específica como archivo individual:
+**Exportar todo con reporte HTML:**
 
 ```shell
-python my_spotify_playlists_downloader.py --split --playlist_name "Nombre de mi playlist" --clean_output
+python my_spotify_playlists_downloader.py --split --all_playlists --html_report
+```
+
+**Limpiar, exportar solo canciones favoritas con reporte:**
+
+```shell
+python my_spotify_playlists_downloader.py --liked_songs --html_report --clean_output
+```
+
+**Exportar lista específica como archivo dividido con limpieza:**
+
+```shell
+python my_spotify_playlists_downloader.py --split --playlist_name "Mi Playlist" --clean_output
+```
+
+**Exportar todo en archivos divididos con reporte HTML después de limpiar:**
+
+```shell
+python my_spotify_playlists_downloader.py --split --all_playlists --html_report --clean_output
 ```
 
 ---
@@ -143,8 +191,11 @@ python my_spotify_playlists_downloader.py --split --playlist_name "Nombre de mi 
 
 - Los nombres de las listas usados como nombre de archivo son saneados: se eliminan caracteres inválidos y emojis, pero
   se conservan los acentos y el formato original.
-- Al usar --playlist_name, el script registra el filtro normalizado y la cantidad de listas a exportar.
-- Al usar --clean_output, el script registra cada archivo eliminado y confirma la limpieza del directorio.
+- Al usar `--playlist_name`, el script registra el filtro normalizado y la cantidad de listas a exportar.
+- Al usar `--clean_output`, el script registra cada archivo eliminado (JSON y HTML) y confirma la limpieza del directorio.
+- El comportamiento por defecto exporta solo listas de reproducción. Usa `--liked_songs` para canciones favoritas o `--all_playlists` para ambos.
+- Puedes usar `--liked_songs` y `--playlist_name` juntos para exportar una lista específica junto con tus canciones favoritas.
+- El reporte HTML (`--html_report`) incluye las rutas de los archivos para cada lista exportada y para las canciones favoritas.
 
 ---
 

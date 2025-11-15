@@ -22,7 +22,10 @@ Documentation is available in multiple languages:
 ## Main features
 
 ✔️ Exports all playlists and detailed track metadata  
+✔️ Export liked songs (saved tracks) collection  
 ✔️ Option to split output into individual JSON files per playlist  
+✔️ Flexible export combinations (liked songs and/or playlists)  
+✔️ HTML report generation with modern, responsive design  
 ✔️ Includes track position, user who added it, and date added  
 ✔️ Logging to console and file for auditability  
 ✔️ Portable across Windows, macOS, and Linux  
