@@ -25,7 +25,10 @@ Il progetto è rilasciato sotto licenza MIT ed è destinato a un uso educativo e
 ## Funzionalità
 
 - Esporta **tutte le playlist e i metadati dei brani**, inclusi nome, artisti, album, data di rilascio e altro.
+- **Esporta i brani preferiti** (collezione dei brani salvati).
 - Opzione per **dividere l'output** in file JSON individuali per ogni playlist.
+- **Combinazioni flessibili di esportazione** (brani preferiti e/o playlist).
+- **Generazione di report HTML** con design moderno e responsive.
 - Include **la posizione del brano nella playlist**, l'utente che lo ha aggiunto e la data di aggiunta.
 - **Logging** sia su console che su file per la tracciabilità.
 - **Portabile** – funziona su Windows, macOS e Linux.
@@ -116,22 +119,67 @@ python my_spotify_playlists_downloader.py --playlist_name "Nome della mia playli
 - Lo script esporterà solo la playlist il cui nome corrisponde (case-insensitive, normalizzato) al valore fornito.
 - Se non ci sono corrispondenze, verrà registrato un errore e nessun file verrà esportato.
 
+### Esporta solo i brani preferiti (senza playlist)
+
+```shell
+python my_spotify_playlists_downloader.py --liked_songs
+```
+
+- Esporta la tua collezione di brani salvati (brani preferiti) in un file JSON dedicato.
+- Per impostazione predefinita, lo script esporta le playlist. Usa questo flag per esportare solo i brani preferiti.
+
+### Esporta playlist e brani preferiti
+
+```shell
+python my_spotify_playlists_downloader.py --all_playlists
+```
+
+- Esporta sia le tue playlist che i tuoi brani preferiti.
+- Equivalente a usare `--liked_songs` senza specificare `--playlist_name`.
+
+### Genera report HTML
+
+```shell
+python my_spotify_playlists_downloader.py --html_report
+```
+
+- Genera un report HTML professionale e responsive con il riepilogo di tutta l'esportazione.
+- Include statistiche, conteggi di playlist/brani e percorsi dei file esportati.
+- Il report viene salvato nella directory di output come `SpotifyExportReport_YYYYMMDD_HHMMSS.html`.
+
 ### Pulisci la cartella di output prima dell'esportazione
 
 ```shell
 python my_spotify_playlists_downloader.py --clean_output
 ```
 
-- Tutti i file JSON nella cartella di output verranno eliminati prima di esportare nuove playlist.
+- Tutti i file JSON e HTML nella cartella di output verranno eliminati prima dell'esportazione.
 - Utile per evitare di mescolare esportazioni vecchie e nuove.
 
-### Combina le opzioni
+### Esempi combinati
 
-Puoi combinare queste opzioni secondo necessità. Ad esempio, per pulire la cartella di output ed esportare solo una
-playlist specifica come file individuale:
+**Esporta tutto con report HTML:**
 
 ```shell
-python my_spotify_playlists_downloader.py --split --playlist_name "Nome della mia playlist" --clean_output
+python my_spotify_playlists_downloader.py --split --all_playlists --html_report
+```
+
+**Pulisci, esporta solo i brani preferiti con report:**
+
+```shell
+python my_spotify_playlists_downloader.py --liked_songs --html_report --clean_output
+```
+
+**Esporta playlist specifica come file diviso con pulizia:**
+
+```shell
+python my_spotify_playlists_downloader.py --split --playlist_name "Mia Playlist" --clean_output
+```
+
+**Esporta tutto in file divisi con report HTML dopo la pulizia:**
+
+```shell
+python my_spotify_playlists_downloader.py --split --all_playlists --html_report --clean_output
 ```
 
 ---
@@ -140,8 +188,11 @@ python my_spotify_playlists_downloader.py --split --playlist_name "Nome della mi
 
 - I nomi delle playlist usati come nomi file vengono sanificati: caratteri non validi ed emoji vengono rimossi, ma si
   mantengono accenti e maiuscole/minuscole originali.
-- Usando --playlist_name, lo script registra il filtro normalizzato e il numero di playlist da esportare.
-- Usando --clean_output, lo script registra ogni file eliminato e conferma la pulizia della cartella.
+- Usando `--playlist_name`, lo script registra il filtro normalizzato e il numero di playlist da esportare.
+- Usando `--clean_output`, lo script registra ogni file eliminato (JSON e HTML) e conferma la pulizia della cartella.
+- Il comportamento predefinito esporta solo le playlist. Usa `--liked_songs` per i brani preferiti o `--all_playlists` per entrambi.
+- Puoi usare `--liked_songs` e `--playlist_name` insieme per esportare una playlist specifica insieme ai tuoi brani preferiti.
+- Il report HTML (`--html_report`) include i percorsi dei file per ogni playlist esportata e per i brani preferiti.
 
 ---
 

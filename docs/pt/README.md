@@ -25,7 +25,10 @@ O projeto é publicado sob a licença MIT e destinado a uso educacional e pessoa
 ## Funcionalidades
 
 - Exporta **todas as playlists e metadados das faixas**, incluindo nome, artistas, álbum, data de lançamento e mais.
+- **Exporta músicas curtidas** (coleção de faixas salvas).
 - Opção para **dividir a exportação** em arquivos JSON individuais por playlist.
+- **Combinações flexíveis de exportação** (músicas curtidas e/ou playlists).
+- **Geração de relatório HTML** com design moderno e responsivo.
 - Inclui **posição da faixa na playlist**, usuário que adicionou e data de adição.
 - **Logging** no console e em arquivo para rastreabilidade.
 - **Portável** – funciona no Windows, macOS e Linux.
@@ -118,22 +121,67 @@ python my_spotify_playlists_downloader.py --playlist_name "Nome da minha playlis
   valor fornecido.
 - Se não houver correspondência, um erro será registrado e nenhum arquivo será exportado.
 
+### Exportar apenas músicas curtidas (sem playlists)
+
+```shell
+python my_spotify_playlists_downloader.py --liked_songs
+```
+
+- Exporta sua coleção de faixas salvas (músicas curtidas) para um arquivo JSON dedicado.
+- Por padrão, o script exporta playlists. Use esta flag para exportar apenas as músicas curtidas.
+
+### Exportar playlists e músicas curtidas
+
+```shell
+python my_spotify_playlists_downloader.py --all_playlists
+```
+
+- Exporta tanto suas playlists quanto suas músicas curtidas.
+- Equivalente a usar `--liked_songs` sem especificar `--playlist_name`.
+
+### Gerar relatório HTML
+
+```shell
+python my_spotify_playlists_downloader.py --html_report
+```
+
+- Gera um relatório HTML profissional e responsivo com resumo de toda a exportação.
+- Inclui estatísticas, contagem de playlists/faixas e caminhos dos arquivos exportados.
+- O relatório é salvo no diretório de saída como `SpotifyExportReport_YYYYMMDD_HHMMSS.html`.
+
 ### Limpar a pasta de saída antes de exportar
 
 ```shell
 python my_spotify_playlists_downloader.py --clean_output
 ```
 
-- Todos os arquivos JSON na pasta de saída serão excluídos antes de exportar novas playlists.
+- Todos os arquivos JSON e HTML na pasta de saída serão excluídos antes da exportação.
 - Útil para evitar misturar exportações antigas e novas.
 
-### Combinar opções
+### Exemplos combinados
 
-Você pode combinar essas opções conforme necessário. Por exemplo, para limpar a pasta de saída e exportar apenas uma
-playlist específica como arquivo individual:
+**Exportar tudo com relatório HTML:**
 
 ```shell
-python my_spotify_playlists_downloader.py --split --playlist_name "Nome da minha playlist" --clean_output
+python my_spotify_playlists_downloader.py --split --all_playlists --html_report
+```
+
+**Limpar, exportar apenas músicas curtidas com relatório:**
+
+```shell
+python my_spotify_playlists_downloader.py --liked_songs --html_report --clean_output
+```
+
+**Exportar playlist específica como arquivo dividido com limpeza:**
+
+```shell
+python my_spotify_playlists_downloader.py --split --playlist_name "Minha Playlist" --clean_output
+```
+
+**Exportar tudo em arquivos divididos com relatório HTML após limpeza:**
+
+```shell
+python my_spotify_playlists_downloader.py --split --all_playlists --html_report --clean_output
 ```
 
 ---
@@ -142,8 +190,11 @@ python my_spotify_playlists_downloader.py --split --playlist_name "Nome da minha
 
 - Os nomes das playlists usados como nomes de arquivos são sanitizados: caracteres inválidos e emojis são removidos, mas
   acentos e maiúsculas/minúsculas originais são mantidos.
-- Ao usar --playlist_name, o script registra o filtro normalizado e a quantidade de playlists a serem exportadas.
-- Ao usar --clean_output, o script registra cada arquivo excluído e confirma a limpeza da pasta.
+- Ao usar `--playlist_name`, o script registra o filtro normalizado e a quantidade de playlists a serem exportadas.
+- Ao usar `--clean_output`, o script registra cada arquivo excluído (JSON e HTML) e confirma a limpeza da pasta.
+- O comportamento padrão exporta apenas playlists. Use `--liked_songs` para músicas curtidas ou `--all_playlists` para ambos.
+- Você pode usar `--liked_songs` e `--playlist_name` juntos para exportar uma playlist específica junto com suas músicas curtidas.
+- O relatório HTML (`--html_report`) inclui os caminhos dos arquivos para cada playlist exportada e para as músicas curtidas.
 
 ---
 
