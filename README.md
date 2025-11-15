@@ -1,5 +1,10 @@
 # My Spotify Playlists Downloader
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![Spotify API](https://img.shields.io/badge/Spotify-Web%20API-green.svg)](https://developer.spotify.com/documentation/web-api/)
+[![Cross-Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/novama/my-spotify-playlists-downloader)
+
 Command-line tool to export your Spotify playlists to JSON files for backup, analysis, or migration purposes.
 
 ---
