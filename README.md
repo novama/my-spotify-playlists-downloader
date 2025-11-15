@@ -1,3 +1,5 @@
+![My Spotify Playlists Downloader](docs/images/logo.png)
+
 # My Spotify Playlists Downloader
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
