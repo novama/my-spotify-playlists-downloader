@@ -328,7 +328,7 @@ def generate_html_report(report_data: dict, output_dir: Path, logger) -> Path:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify Playlists Downloader - Export Report- {timestamp}</title>
+    <title>Playlists Export Report - {timestamp}</title>
     <style>
         * {{
             margin: 0;
@@ -337,258 +337,300 @@ def generate_html_report(report_data: dict, output_dir: Path, logger) -> Path:
         }}
         
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #0a0e27;
-            color: #e4e6eb;
-            line-height: 1.6;
-            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #1e293b;
         }}
         
         .container {{
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
         }}
         
-        .header {{
-            background: linear-gradient(135deg, #1ed760 0%, #1db954 100%);
-            border-radius: 12px;
-            padding: 32px 40px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 12px rgba(30, 215, 96, 0.15);
+        .report-header {{
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #1db954;
         }}
         
-        .header h1 {{
-            color: #ffffff;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }}
-        
-        .header .subtitle {{
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 14px;
-            font-weight: 500;
-        }}
-        
-        .metrics {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }}
-        
-        .metric-card {{
-            background: #151b3b;
-            border-radius: 10px;
-            padding: 24px;
-            border: 1px solid #2a3150;
-            transition: all 0.2s ease;
-        }}
-        
-        .metric-card:hover {{
-            border-color: #1db954;
-            transform: translateY(-2px);
-        }}
-        
-        .metric-value {{
+        .report-header h1 {{
             font-size: 32px;
-            font-weight: 700;
-            color: #1db954;
-            margin-bottom: 4px;
-            line-height: 1;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 8px;
+            line-height: 1.2;
         }}
         
-        .metric-label {{
-            color: #9ca3af;
-            font-size: 13px;
+        .report-header .date {{
+            color: #64748b;
+            font-size: 15px;
             font-weight: 500;
+        }}
+        
+        .stats-container {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }}
+        
+        .stat-box {{
+            background: white;
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }}
+        
+        .stat-box:hover {{
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.15);
+            transform: translateY(-4px);
+        }}
+        
+        .stat-box::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1db954, #1ed760);
+        }}
+        
+        .stat-number {{
+            font-size: 40px;
+            font-weight: 800;
+            color: #1db954;
+            line-height: 1;
+            margin-bottom: 8px;
+        }}
+        
+        .stat-label {{
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }}
         
-        .section {{
-            background: #151b3b;
-            border-radius: 10px;
-            padding: 28px;
-            margin-bottom: 16px;
-            border: 1px solid #2a3150;
+        .card {{
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }}
         
-        .section-title {{
-            font-size: 18px;
-            font-weight: 600;
-            color: #ffffff;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #2a3150;
+        .card-title {{
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e2e8f0;
         }}
         
-        .info-grid {{
-            display: grid;
-            gap: 12px;
+        .info-table {{
+            width: 100%;
         }}
         
         .info-row {{
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
+            padding: 14px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }}
+        
+        .info-row:last-child {{
+            border-bottom: none;
+        }}
+        
+        .info-key {{
+            color: #475569;
+            font-weight: 600;
             font-size: 14px;
         }}
         
-        .info-label {{
-            color: #9ca3af;
+        .info-val {{
+            color: #1e293b;
             font-weight: 500;
-        }}
-        
-        .info-value {{
-            color: #e4e6eb;
-            font-weight: 600;
             text-align: right;
+            font-size: 14px;
         }}
         
-        .status-badge {{
-            background: linear-gradient(135deg, #1db954 0%, #17a34a 100%);
-            color: #ffffff;
-            padding: 4px 12px;
-            border-radius: 6px;
+        .badge {{
+            display: inline-block;
+            background: linear-gradient(135deg, #1db954, #1ed760);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
+            letter-spacing: 0.3px;
         }}
         
-        .playlist-list {{
+        .playlists-grid {{
             display: grid;
-            gap: 10px;
-            max-height: 400px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            max-height: 500px;
             overflow-y: auto;
             padding-right: 8px;
         }}
         
-        .playlist-list::-webkit-scrollbar {{
-            width: 8px;
+        .playlists-grid::-webkit-scrollbar {{
+            width: 10px;
         }}
         
-        .playlist-list::-webkit-scrollbar-track {{
-            background: #0a0e27;
-            border-radius: 4px;
+        .playlists-grid::-webkit-scrollbar-track {{
+            background: #f1f5f9;
+            border-radius: 5px;
         }}
         
-        .playlist-list::-webkit-scrollbar-thumb {{
-            background: #2a3150;
-            border-radius: 4px;
+        .playlists-grid::-webkit-scrollbar-thumb {{
+            background: #cbd5e1;
+            border-radius: 5px;
         }}
         
-        .playlist-list::-webkit-scrollbar-thumb:hover {{
+        .playlists-grid::-webkit-scrollbar-thumb:hover {{
             background: #1db954;
         }}
         
-        .playlist-card {{
-            background: #0a0e27;
-            border-radius: 8px;
-            padding: 16px;
-            border-left: 3px solid #1db954;
+        .playlist-item {{
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid transparent;
             transition: all 0.2s ease;
+            cursor: default;
         }}
         
-        .playlist-card:hover {{
-            background: #1a1f3a;
+        .playlist-item:hover {{
+            border-color: #1db954;
+            background: white;
+            box-shadow: 0 2px 8px rgba(29, 185, 84, 0.1);
         }}
         
-        .playlist-header {{
+        .playlist-title {{
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }}
+        
+        .playlist-meta {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 6px;
-        }}
-        
-        .playlist-name {{
-            font-weight: 600;
-            color: #ffffff;
-            font-size: 15px;
-        }}
-        
-        .playlist-tracks {{
-            color: #1db954;
-            font-weight: 600;
-            font-size: 14px;
+            margin-top: 12px;
         }}
         
         .playlist-owner {{
-            color: #9ca3af;
+            color: #64748b;
             font-size: 13px;
+            font-weight: 500;
+        }}
+        
+        .playlist-count {{
+            background: #1db954;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }}
+        
+        .playlist-path {{
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            word-break: break-all;
+            line-height: 1.4;
         }}
         
         .footer {{
             text-align: center;
-            color: #6b7280;
-            margin-top: 32px;
-            padding-top: 20px;
-            border-top: 1px solid #2a3150;
-            font-size: 13px;
+            padding: 32px 20px;
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 40px;
+        }}
+        
+        .footer strong {{
+            color: #1db954;
         }}
         
         @media (max-width: 768px) {{
-            body {{ padding: 12px; }}
-            .header {{ padding: 24px; }}
-            .header h1 {{ font-size: 24px; }}
-            .section {{ padding: 20px; }}
-            .metrics {{ grid-template-columns: repeat(2, 1fr); }}
-            .metric-card {{ padding: 16px; }}
-            .metric-value {{ font-size: 28px; }}
+            body {{ padding: 20px 12px; }}
+            .report-header {{ padding: 24px; }}
+            .report-header h1 {{ font-size: 26px; }}
+            .card {{ padding: 20px; }}
+            .stats-container {{ grid-template-columns: 1fr 1fr; gap: 16px; }}
+            .stat-box {{ padding: 20px; }}
+            .stat-number {{ font-size: 32px; }}
+            .playlists-grid {{ grid-template-columns: 1fr; }}
         }}
         
         @media (max-width: 480px) {{
-            .metrics {{ grid-template-columns: 1fr; }}
-            .info-row {{ flex-direction: column; align-items: flex-start; gap: 4px; }}
-            .info-value {{ text-align: left; }}
+            .stats-container {{ grid-template-columns: 1fr; }}
+            .info-row {{ flex-direction: column; gap: 8px; }}
+            .info-val {{ text-align: left; }}
         }}
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Spotify Playlists Downloader - Export Report</h1>
-            <div class="subtitle">{timestamp}</div>
+        <div class="report-header">
+            <h1>Playlists Export Report</h1>
+            <div class="date">{timestamp}</div>
         </div>
         
-        <div class="metrics">
-            <div class="metric-card">
-                <div class="metric-value">{report_data.get('total_playlists', 0)}</div>
-                <div class="metric-label">Playlists</div>
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-number">{report_data.get('total_playlists', 0)}</div>
+                <div class="stat-label">Playlists Exported</div>
             </div>
-            <div class="metric-card">
-                <div class="metric-value">{report_data.get('total_tracks', 0):,}</div>
-                <div class="metric-label">Total Tracks</div>
+            <div class="stat-box">
+                <div class="stat-number">{report_data.get('total_tracks', 0):,}</div>
+                <div class="stat-label">Total Tracks</div>
             </div>
-            <div class="metric-card">
-                <div class="metric-value">{total_export_files}</div>
-                <div class="metric-label">Files Created</div>
+            <div class="stat-box">
+                <div class="stat-number">{total_export_files}</div>
+                <div class="stat-label">Files Created</div>
             </div>
-            <div class="metric-card">
-                <div class="metric-value">{report_data.get('execution_time', 0):.1f}s</div>
-                <div class="metric-label">Execution Time</div>
+            <div class="stat-box">
+                <div class="stat-number">{report_data.get('execution_time', 0):.1f}s</div>
+                <div class="stat-label">Execution Time</div>
             </div>
         </div>
         
-        <div class="section">
-            <div class="section-title">Execution Details</div>
-            <div class="info-grid">
+        <div class="card">
+            <div class="card-title">Export Configuration</div>
+            <div class="info-table">
                 <div class="info-row">
-                    <span class="info-label">Output Directory</span>
-                    <span class="info-value">{report_data.get('output_dir', 'N/A')}</span>
+                    <span class="info-key">Output Directory</span>
+                    <span class="info-val">{report_data.get('output_dir', 'N/A')}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Export Mode</span>
-                    <span class="info-value">{"Individual Files" if report_data.get('split_mode', False) else "Combined Files"}</span>
+                    <span class="info-key">Export Mode</span>
+                    <span class="info-val">{"Individual Files" if report_data.get('split_mode', False) else "Combined Files"}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Liked Songs</span>
-                    <span class="info-value">{"Exported" if report_data.get('liked_songs_exported', False) else "Not Exported"}</span>
+                    <span class="info-key">Liked Songs Included</span>
+                    <span class="info-val">{"Yes" if report_data.get('liked_songs_exported', False) else "No"}</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Status</span>
-                    <span class="status-badge">Completed Successfully</span>
+                    <span class="info-key">Export Status</span>
+                    <span class="badge">Completed Successfully</span>
                 </div>
             </div>
         </div>"""
@@ -596,18 +638,23 @@ def generate_html_report(report_data: dict, output_dir: Path, logger) -> Path:
     # Add playlist details section if playlists were exported
     if report_data.get('playlists_details'):
         html_content += f"""
-        <div class="section">
-            <div class="section-title">Exported Playlists ({len(report_data['playlists_details'])})</div>
-            <div class="playlist-list">"""
+        <div class="card">
+            <div class="card-title">Exported Playlists ({len(report_data['playlists_details'])})</div>
+            <div class="playlists-grid">"""
         
         for playlist in report_data['playlists_details']:
+            file_path = playlist.get('file_path', '')
             html_content += f"""
-                <div class="playlist-card">
-                    <div class="playlist-header">
-                        <div class="playlist-name">{playlist.get('name', 'Unknown Playlist')}</div>
-                        <div class="playlist-tracks">{playlist.get('track_count', 0)} tracks</div>
-                    </div>
-                    <div class="playlist-owner">Owner: {playlist.get('owner', 'Unknown')}</div>
+                <div class="playlist-item">
+                    <div class="playlist-title">{playlist.get('name', 'Unknown Playlist')}</div>
+                    <div class="playlist-meta">
+                        <span class="playlist-owner">{playlist.get('owner', 'Unknown')}</span>
+                        <span class="playlist-count">{playlist.get('track_count', 0)} tracks</span>
+                    </div>"""
+            if file_path:
+                html_content += f"""
+                    <div class="playlist-path">{file_path}</div>"""
+            html_content += """
                 </div>"""
         
         html_content += """
@@ -616,21 +663,25 @@ def generate_html_report(report_data: dict, output_dir: Path, logger) -> Path:
     
     # Add liked songs section if exported
     if report_data.get('liked_songs_exported'):
+        liked_songs_path = report_data.get('liked_songs_path', '')
         html_content += f"""
-        <div class="section">
-            <div class="section-title">Liked Songs</div>
-            <div class="playlist-card">
-                <div class="playlist-header">
-                    <div class="playlist-name">Your Liked Songs</div>
-                    <div class="playlist-tracks">{report_data.get('liked_songs_count', 0)} tracks</div>
-                </div>
-                <div class="playlist-owner">Personal collection from Spotify</div>
+        <div class="card">
+            <div class="card-title">Liked Songs Collection</div>
+            <div class="playlist-item">
+                <div class="playlist-title">Your Liked Songs</div>
+                <div class="playlist-meta">
+                    <span class="playlist-count">{report_data.get('liked_songs_count', 0)} tracks</span>
+                </div>"""
+        if liked_songs_path:
+            html_content += f"""
+                <div class="playlist-path">{liked_songs_path}</div>"""
+        html_content += """
             </div>
         </div>"""
     
-    html_content += f"""
+    html_content += """
         <div class="footer">
-            <p>Generated by Spotify Playlists Downloader</p>
+            <p>Generated by <strong>Spotify Playlists Downloader</strong></p>
         </div>
     </div>
 </body>
@@ -638,7 +689,7 @@ def generate_html_report(report_data: dict, output_dir: Path, logger) -> Path:
     
     # Save HTML report
     output_dir.mkdir(parents=True, exist_ok=True)
-    report_filename = f"spotify_export_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    report_filename = f"playlists_export_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
     report_path = output_dir / report_filename
     
     report_path.write_text(html_content, encoding='utf-8')
@@ -710,6 +761,7 @@ def export_liked_songs(sp: spotipy.Spotify, split: bool, output_dir: Path,
     if report_data is not None:
         report_data['liked_songs_exported'] = True
         report_data['liked_songs_count'] = len(tracks)
+        report_data['liked_songs_path'] = str(filepath)
     
     return 1, len(tracks)
 
@@ -783,14 +835,6 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
             'tracks': tracks
         }
 
-        # Collect playlist data for report
-        if report_data is not None:
-            report_data['playlists_details'].append({
-                'name': playlist_name,
-                'owner': owner_name,
-                'track_count': len(tracks)
-            })
-
         if split:
             export_filename = f"{output_prefix_split}{sanitize_playlist_name(playlist_name)}.json"
             filename = export_filename
@@ -798,9 +842,27 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
             filepath.write_text(json.dumps([playlist_obj], ensure_ascii=False, indent=4), encoding='utf-8')
             logger.info(f"Saved playlist to {filepath}")
             total_playlists += 1
+            
+            # Collect playlist data for report (with file path for split mode)
+            if report_data is not None:
+                report_data['playlists_details'].append({
+                    'name': playlist_name,
+                    'owner': owner_name,
+                    'track_count': len(tracks),
+                    'file_path': str(filepath)
+                })
         else:
             export.append(playlist_obj)
             total_playlists += 1
+            
+            # Collect playlist data for report (without file path yet for combined mode)
+            if report_data is not None:
+                report_data['playlists_details'].append({
+                    'name': playlist_name,
+                    'owner': owner_name,
+                    'track_count': len(tracks),
+                    'file_path': None  # Will be set after combined file is saved
+                })
 
     if not split and filtered_playlists:
         if normalized_filter:
@@ -811,6 +873,12 @@ def export_playlists(sp: spotipy.Spotify, split: bool, output_dir: Path,
         filepath = output_dir / filename
         filepath.write_text(json.dumps(export, ensure_ascii=False, indent=4), encoding='utf-8')
         logger.info(f"Export completed. File saved as {filepath}")
+        
+        # Update all playlists with the combined file path
+        if report_data is not None:
+            for playlist_detail in report_data['playlists_details']:
+                if playlist_detail.get('file_path') is None:
+                    playlist_detail['file_path'] = str(filepath)
 
     return total_playlists, total_tracks
 
@@ -867,13 +935,15 @@ def main():
     # Clean output directory if requested
     if args.clean_output:
         json_files = list(output_dir.glob('*.json'))
-        for f in json_files:
+        html_files = list(output_dir.glob('*.html'))
+        files_to_delete = json_files + html_files
+        for f in files_to_delete:
             try:
                 f.unlink()
                 logger.debug(f"Deleted old output file: {f}")
             except Exception as e:
                 logger.error(f"Failed to delete {f}: {e}")
-        logger.info(f"Output directory cleaned: {output_dir}")
+        logger.info(f"Output directory cleaned: {output_dir} ({len(json_files)} JSON, {len(html_files)} HTML files deleted)")
 
     # Pass playlist_name filter if provided and not blank
     playlist_name_filter = args.playlist_name if args.playlist_name and args.playlist_name.strip() else None
