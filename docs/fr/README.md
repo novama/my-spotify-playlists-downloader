@@ -28,7 +28,7 @@ Ce projet est publié sous licence MIT et destiné à un usage éducatif et pers
 - **Exporte les titres aimés** (collection des pistes sauvegardées).
 - Option pour **diviser l'export** en fichiers JSON individuels par playlist.
 - **Combinaisons flexibles d'export** (titres aimés et/ou playlists).
-- **Génération de rapport HTML** avec design moderne et responsive.
+- **Génération de rapport HTML** avec design moderne et responsive affichant statistiques et chemins des fichiers.
 - Inclut la **position de la piste dans la playlist**, l'utilisateur qui l'a ajoutée et la date d'ajout.
 - **Logging** à la fois dans la console et dans un fichier pour la traçabilité.
 - **Portable** – fonctionne sous Windows, macOS et Linux.
@@ -36,153 +36,214 @@ Ce projet est publié sous licence MIT et destiné à un usage éducatif et pers
 
 ---
 
-## Prérequis
+## Guide Étape par Étape pour Commencer
 
-- Python 3.10 ou supérieur
-- Un [compte développeur Spotify](SPOTIFY_DEVELOPER_SETUP.md) pour créer une application et obtenir votre Client ID et
-  Client Secret
+Suivez ces étapes pour configurer et utiliser l'outil. Ne vous inquiétez pas si vous n'êtes pas familier avec la programmation – je vais vous guider à travers tout.
 
-Installez les dépendances avec :
+### Étape 1: Vérifier l'Installation de Python
+
+Tout d'abord, assurez-vous d'avoir Python installé sur votre ordinateur.
+
+**Vérifier si Python est installé:**
+
+Ouvrez votre terminal (Invite de commandes sur Windows, Terminal sur Mac/Linux) et tapez:
 
 ```shell
-pip install -r requirements.txt
+python --version
 ```
 
----
+Vous devriez voir quelque chose comme `Python 3.10.x` ou supérieur. Si vous voyez une erreur ou une version inférieure à 3.10, vous devez installer ou mettre à jour Python:
 
-## Configuration
+- **Télécharger Python:** Visitez [python.org/downloads](https://www.python.org/downloads/) et téléchargez Python 3.10 ou plus récent.
+- **Pendant l'installation:** Assurez-vous de cocher la case qui dit "Add Python to PATH" (Ajouter Python au PATH).
 
-1. **Clonez le dépôt**
+### Étape 2: Configurer un Compte Développeur Spotify
 
-    ```shell
-    git clone https://github.com/yourusername/my_spotify_playlists_downloader.git
-    cd my_spotify_playlists_downloader
-    ```
+Pour accéder à vos données Spotify, vous devez créer un compte développeur Spotify et obtenir des identifiants spéciaux (comme des clés pour accéder à votre compte).
 
-2. **Créez votre fichier `.env`**
+**Suivez ce guide détaillé:** [SPOTIFY_DEVELOPER_SETUP.md](SPOTIFY_DEVELOPER_SETUP.md)
 
-   Copiez l'exemple fourni:
+Ce guide vous expliquera:
 
-    ```shell
-    cp .env.example .env
-    ```
+- Créer un compte développeur Spotify (c'est gratuit!)
+- Créer une application dans le Tableau de bord Spotify
+- Obtenir votre **Client ID** et **Client Secret**
+- Configurer la **Redirect URI**
 
-3. **Éditez `.env` et définissez vos variables**
+**Important:** Gardez votre Client ID et Client Secret à portée de main – vous en aurez besoin dans les prochaines étapes!
 
-   Obligatoires :
+### Étape 3: Télécharger le Script
 
-    - `SPOTIFY_CLIENT_ID`
-    - `SPOTIFY_CLIENT_SECRET`
-    - `SPOTIFY_REDIRECT_URI` (doit correspondre exactement à ce qui est configuré dans votre application Spotify,
-      ex. <http://127.0.0.1:8000/callback>)
+#### Option A: Télécharger en ZIP (plus facile pour les débutants)
 
-   Variables optionnelles:
+Sur cette page du dépôt GitHub, allez en haut et:
 
-    - `OUTPUT_DIR`: Répertoire où seront enregistrés les fichiers exportés (par défaut : ./playlists)
-    - `OUTPUT_PREFIX_SPLIT`: Préfixe pour les fichiers en mode divisé
-    - `OUTPUT_PREFIX_SINGLE`: Préfixe pour le fichier unique exporté
-    - `LOG_DIR`: Répertoire où seront stockés les logs (par défaut : emplacement du script)
-    - `LOG_LEVEL`: Niveau de logging (par défaut : INFO, peut être DEBUG, INFO, WARNING, ERROR, CRITICAL)
+1. Cliquez sur le bouton vert "Code"
+2. Sélectionnez "Download ZIP"
+3. Extrayez le fichier ZIP dans un dossier sur votre ordinateur (ex. `Documents/spotify-downloader`)
 
-### Configuration du compte développeur Spotify
+#### Option B: En utilisant Git (si vous avez Git installé)
 
-Ce script nécessite un compte développeur Spotify et les identifiants d'une application enregistrée.
-Voir [SPOTIFY_DEVELOPER_SETUP.md](SPOTIFY_DEVELOPER_SETUP.md) pour des instructions détaillées.
+Ouvrez votre terminal et exécutez:
 
----
+```shell
+git clone https://github.com/novama/my_spotify_playlists_downloader.git
+cd my_spotify_playlists_downloader
+```
 
-## Utilisation
+### Étape 4: Installer les Dépendances Nécessaires
 
-### Exporter toutes les playlists dans un seul fichier JSON (par défaut)
+Le script a besoin de quelques paquets Python supplémentaires pour fonctionner. Installons-les.
+
+1. **Ouvrez votre terminal** et naviguez vers le dossier où vous avez extrait/cloné le script:
+
+   ```shell
+   cd chemin/vers/my_spotify_playlists_downloader
+   ```
+
+   Remplacez `chemin/vers/` par l'emplacement réel (ex. `cd Téléchargements/spotify-downloader`).
+
+2. **Installer les dépendances:**
+
+   ```shell
+   pip install -r requirements.txt
+   ```
+
+   Attendez que l'installation se termine. Vous verrez des messages indiquant que les paquets sont en cours d'installation.
+
+### Étape 5: Configurer vos Identifiants
+
+Maintenant, vous devez indiquer au script vos identifiants Spotify.
+
+1. **Trouvez le fichier `.env.example`** dans le dossier du script.
+
+2. **Faites une copie et renommez-la en `.env`** (sans la partie `.example`):
+
+   - **Windows:** Clic droit sur le fichier → "Copier" → Coller → Renommer en `.env`
+   - **Mac/Linux:** Dans le terminal, exécutez: `cp .env.example .env`
+
+3. **Ouvrez le fichier `.env`** avec un éditeur de texte (Bloc-notes sur Windows, TextEdit sur Mac, ou n'importe quel éditeur de code).
+
+4. **Remplissez vos identifiants** de l'Étape 2:
+
+   ```env
+   SPOTIFY_CLIENT_ID=votre_client_id_ici
+   SPOTIFY_CLIENT_SECRET=votre_client_secret_ici
+   SPOTIFY_REDIRECT_URI=http://127.0.0.1:8000/callback
+   ```
+
+   Remplacez `votre_client_id_ici` et `votre_client_secret_ici` par les valeurs réelles de votre Tableau de bord Développeur Spotify.
+
+   **Important:** La `SPOTIFY_REDIRECT_URI` doit correspondre exactement à ce que vous avez configuré dans les paramètres de votre application Spotify!
+
+5. **Paramètres optionnels** (vous pouvez les laisser par défaut ou les personnaliser):
+
+   ```env
+   OUTPUT_DIR=./output
+   LOG_LEVEL=INFO
+   ```
+
+6. **Sauvegardez le fichier** et fermez-le.
+
+### Étape 6: Exécutez votre Premier Export
+
+Maintenant, vous êtes prêt à exporter vos playlists. Voici quelques scénarios courants:
+
+#### Export Basique: Toutes les Playlists
+
+Exportez toutes vos playlists dans un seul fichier JSON:
 
 ```shell
 python my_spotify_playlists_downloader.py
 ```
 
-### Exporter chaque playlist en fichier JSON individuel
+**Ce qui se passe:**
+
+- Une fenêtre de navigateur s'ouvrira vous demandant de vous connecter à Spotify (seulement la première fois)
+- Après avoir autorisé l'application, vos playlists seront exportées
+- Les fichiers seront sauvegardés dans le dossier `output` (ou là où vous l'avez spécifié dans `.env`)
+
+#### Exporter Tout avec un Beau Rapport
+
+Exportez toutes les playlists ET les titres aimés, avec un beau rapport HTML:
+
+```shell
+python my_spotify_playlists_downloader.py --all_playlists --liked_songs --html_report
+```
+
+**Ce que vous obtenez:**
+
+- Toutes vos playlists exportées sous forme de fichiers JSON
+- Vos titres aimés exportés dans un fichier JSON séparé
+- Un beau rapport HTML que vous pouvez ouvrir dans votre navigateur avec des statistiques et des emplacements de fichiers
+
+#### Exporter Chaque Playlist comme Fichiers Séparés
+
+Gardez chaque playlist dans son propre fichier:
 
 ```shell
 python my_spotify_playlists_downloader.py --split
 ```
 
-### Spécifier un répertoire de sortie personnalisé
+#### Exporter Seulement vos Titres Aimés
 
-```shell
-python my_spotify_playlists_downloader.py --output_dir ./my_exports
-```
-
-### Exporter uniquement une playlist spécifique par nom
-
-```shell
-python my_spotify_playlists_downloader.py --playlist_name "Nom de ma playlist"
-```
-
-- Le script exportera uniquement la playlist dont le nom correspond (insensible à la casse, normalisé) à la valeur
-  fournie.
-- Si aucune playlist ne correspond, une erreur sera enregistrée et aucun fichier ne sera exporté.
-
-### Exporter uniquement les titres aimés (sans playlists)
+Exportez seulement vos pistes sauvegardées:
 
 ```shell
 python my_spotify_playlists_downloader.py --liked_songs
 ```
 
-- Exporte votre collection de pistes sauvegardées (titres aimés) dans un fichier JSON dédié.
-- Par défaut, le script exporte les playlists. Utilisez ce flag pour exporter uniquement les titres aimés.
+#### Exporter une Playlist Spécifique
 
-### Exporter les playlists et les titres aimés
-
-```shell
-python my_spotify_playlists_downloader.py --all_playlists
-```
-
-- Exporte à la fois vos playlists et vos titres aimés.
-- Équivalent à utiliser `--liked_songs` sans spécifier `--playlist_name`.
-
-### Générer un rapport HTML
+Exportez seulement une playlist par nom:
 
 ```shell
-python my_spotify_playlists_downloader.py --html_report
+python my_spotify_playlists_downloader.py --playlist_name "Ma Playlist Préférée"
 ```
 
-- Génère un rapport HTML professionnel et responsive avec le résumé de toute l'exportation.
-- Inclut les statistiques, le nombre de playlists/pistes et les chemins des fichiers exportés.
-- Le rapport est enregistré dans le répertoire de sortie sous le nom `SpotifyExportReport_YYYYMMDD_HHMMSS.html`.
+Remplacez `"Ma Playlist Préférée"` par le nom réel de votre playlist.
 
-### Nettoyer le répertoire de sortie avant l'export
+#### Départ Propre (Supprimer les Anciens Exports D'abord)
+
+Supprimez les anciens exports avant d'en créer de nouveaux:
 
 ```shell
-python my_spotify_playlists_downloader.py --clean_output
+python my_spotify_playlists_downloader.py --clean_output --all_playlists --html_report
 ```
 
-- Tous les fichiers JSON et HTML du répertoire de sortie seront supprimés avant l'export.
-- Utile pour éviter de mélanger d'anciennes et de nouvelles exportations.
+#### Le Pack Complet (Recommandé!)
 
-### Exemples combinés
-
-**Exporter tout avec rapport HTML:**
+Exportez tout avec toutes les fonctionnalités activées:
 
 ```shell
-python my_spotify_playlists_downloader.py --split --all_playlists --html_report
+python my_spotify_playlists_downloader.py --split --all_playlists --liked_songs --html_report --clean_output
 ```
 
-**Nettoyer, exporter uniquement les titres aimés avec rapport:**
+Cela va:
 
-```shell
-python my_spotify_playlists_downloader.py --liked_songs --html_report --clean_output
-```
+1. Supprimer les anciens fichiers d'export (départ propre)
+2. Exporter chaque playlist comme un fichier JSON séparé
+3. Exporter vos titres aimés
+4. Générer un beau rapport HTML
+5. Vous montrer exactement où tout a été sauvegardé
 
-**Exporter une playlist spécifique en fichier divisé avec nettoyage:**
+---
 
-```shell
-python my_spotify_playlists_downloader.py --split --playlist_name "Ma Playlist" --clean_output
-```
+## Comprendre les Options
 
-**Exporter tout en fichiers divisés avec rapport HTML après nettoyage:**
+Voici ce que fait chaque option:
 
-```shell
-python my_spotify_playlists_downloader.py --split --all_playlists --html_report --clean_output
-```
+| Option | Ce Qu'elle Fait |
+|--------|-----------------|
+| `--split` | Crée des fichiers JSON séparés pour chaque playlist (au lieu d'un gros fichier) |
+| `--liked_songs` | Exporte votre collection de titres aimés/sauvegardés |
+| `--all_playlists` | Exporte toutes les playlists (utilisez avec `--liked_songs` pour tout exporter) |
+| `--html_report` | Crée un beau rapport HTML avec statistiques et emplacements des fichiers |
+| `--clean_output` | Supprime les anciens fichiers JSON et HTML avant d'exporter les nouveaux |
+| `--playlist_name "Nom"` | Exporte seulement la playlist avec ce nom spécifique |
+| `--output_dir ./dossier` | Sauvegarde les fichiers dans un dossier spécifique |
+
+**Conseil:** Vous pouvez combiner plusieurs options, ajoutez-les simplement les unes après les autres, séparées par des espaces.
 
 ---
 
