@@ -1,4 +1,4 @@
-![My Spotify Playlists Downloader](docs/images/logo.png)
+![My Spotify Playlists Downloader](docs/images/header_logo.png)
 
 # My Spotify Playlists Downloader
 
